@@ -104,17 +104,31 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
     w_0 = 0.
     v = normalvariate(0, 0.2) * ones((n, k))
 
-    g_w_0 = 0
-    e = 0.00000001
     r = 0.0001
-    g_w = [0] * len(w)
-    g_v = 0 * zeros((n, k))
 
-    def adagrad(_dw, _all_g):
-        return _dw / (math.sqrt(_all_g) + e)
+    t = 0
+    epsilon = 1e-8
+    beta1 = 0.9
+    beta2 = 0.999
+
+    # w0 weight
+    m0 = 0
+    v0 = 0
+
+    # w
+    m_w = zeros((n, 1))
+    v_w = zeros((n, 1))
+
+    # v
+    m_vw = zeros((n, k))
+    v_vw = zeros((n, k))
+
+    def adam(_m, _v, _e):
+        return _m / (np.sqrt(_v) + _e)
 
     for it in range(iter):
         print(it)
+        t += 1
         for x in range(m):  # 随机优化，对每一个样本而言的
             inter_1 = dataMatrix[x] * v
             inter_2 = multiply(dataMatrix[x], dataMatrix[x]) * multiply(v, v)  # multiply对应元素相乘
@@ -127,30 +141,42 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
             # print "loss: ",loss
 
             dw = loss * classLabels[x]
-            g_w_0 += (dw * dw)
+
+            m0 = beta1 * m0 + (1 - beta1) * dw
+            v0 = beta2 * v0 + (1 - beta2) * (dw ** 2)
+            mb = m0 / (1 - beta1 ** t)
+            vb = v0 / (1 - beta2 ** t)
+
+            w_0 = w - alpha * adam(mb, vb, epsilon) - alpha * r * w_0
 
             # w_0 = w_0 - alpha * loss * classLabels[x] - alpha * r * w_0
-            w_0 = w_0 - alpha * (adagrad(dw, g_w_0) * dw + r * w_0)
 
             for i in range(n):
                 if dataMatrix[x, i] != 0:
                     dw = loss * classLabels[x] * dataMatrix[x, i]
-                    g_w[i] += (dw * dw)
-                    # w[i, 0] = w[i, 0] - alpha * loss * classLabels[x] * dataMatrix[x, i] - alpha * r * w[i, 0]
-                    w[i, 0] = w[i, 0] - alpha * (adagrad(dw, g_w[i]) * dw + r * w[i, 0])
-                    for j in range(k):
-                        dw = loss * classLabels[x] * (
-                                dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[x, i])
-                        g_v[i, j] += (dw * dw)
+                    m_w[i] = beta1 * m_w[i] + (1 - beta1) * dw
+                    v_w[i] = beta2 * v_w[i] + (1 - beta2) * (dw ** 2)
+                    mb = m_w[i] / (1 - beta1 ** t)
+                    vb = v_w[i] / (1 - beta2 ** t)
 
+                    w[i, 0] = w[i, 0] - alpha * adam(mb, vb, epsilon) - alpha * r * w[i, 0]
+
+                    # w[i, 0] = w[i, 0] - alpha * loss * classLabels[x] * dataMatrix[x, i] - alpha * r * w[i, 0]
+                    for j in range(k):
                         # v[i, j] = v[i, j] - alpha * loss * classLabels[x] * (
                         #         dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[
                         #     x, i]) - alpha * r * v[i, j]
-                        v[i, j] = v[i, j] - alpha * (adagrad(dw, g_v[i, j]) * dw + r * v[i, j])
+                        dw = loss * classLabels[x] * (
+                                dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[
+                            x, i])
 
-        # print('g_w_0=', g_w_0)
-        # print('g_w=', g_w)
-        # print('g_v=', g_v)
+                        m_vw[i, j] = beta1 * m_vw[i, j] + (1 - beta1) * dw
+                        v_vw[i, j] = beta2 * v_vw[i, j] + (1 - beta2) * (dw ** 2)
+
+                        mb = m_vw[i, j] / (1 - beta1 ** t)
+                        vb = v_vw[i, j] / (1 - beta2 ** t)
+                        v[i, j] = v[i, j] - alpha * adam(mb, vb, epsilon) - alpha * r * w[i, 0]
+
     return w_0, w, v
 
 
