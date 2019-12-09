@@ -130,7 +130,7 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
 
             dw = loss * classLabels[x]
             g_0 = decay_rate * g_0 + (1 - decay_rate) * dw ** 2
-            w_0 = w_0 - alpha * adagrad(dw, cache, e) - alpha * r * w_0
+            w_0 = w_0 - alpha * adagrad(dw, g_0, e) - alpha * r * w_0
 
             # w_0 = w_0 - alpha * loss * classLabels[x] - alpha * r * w_0
 
