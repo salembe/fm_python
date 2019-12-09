@@ -97,7 +97,7 @@ def sigmoid(inx):
 def stocGradAscent(dataMatrix, classLabels, k, iter):
     # dataMatrix用的是mat, classLabels是列表
     m, n = shape(dataMatrix)
-    alpha = 0.01
+    alpha = 0.1
     # 初始化参数
     # w = random.randn(n, 1)#其中n是特征的个数
     w = zeros((n, 1))
@@ -126,27 +126,27 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
             loss = sigmoid(classLabels[x] * p[0, 0]) - 1
             # print "loss: ",loss
 
-            dw = loss * classLabels[x]
-            g_w_0 += (dw * dw)
+            # dw = loss * classLabels[x]
+            # g_w_0 += (dw * dw)
 
-            # w_0 = w_0 - alpha * loss * classLabels[x] - alpha * r * w_0
-            w_0 = w_0 - alpha * adagrad(dw, g_w_0) * (dw + r * w_0)
+            w_0 = w_0 - alpha * loss * classLabels[x] - alpha * r * w_0
+            # w_0 = w_0 - alpha * adagrad(dw, g_w_0) * (dw + r * w_0)
 
             for i in range(n):
                 if dataMatrix[x, i] != 0:
-                    dw = loss * classLabels[x] * dataMatrix[x, i]
-                    g_w[i] += (dw * dw)
-                    # w[i, 0] = w[i, 0] - alpha * loss * classLabels[x] * dataMatrix[x, i] - alpha * r * w[i, 0]
-                    w[i, 0] = w[i, 0] - alpha * adagrad(dw, g_w[i]) * (dw + r * w[i, 0])
+                    # dw = loss * classLabels[x] * dataMatrix[x, i]
+                    # g_w[i] += (dw * dw)
+                    w[i, 0] = w[i, 0] - alpha * loss * classLabels[x] * dataMatrix[x, i] - alpha * r * w[i, 0]
+                    # w[i, 0] = w[i, 0] - alpha * adagrad(dw, g_w[i]) * (dw + r * w[i, 0])
                     for j in range(k):
-                        dw = loss * classLabels[x] * (
-                                dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[x, i])
-                        g_v[i, j] += (dw * dw)
+                        # dw = loss * classLabels[x] * (
+                        #         dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[x, i])
+                        # g_v[i, j] += (dw * dw)
 
-                        # v[i, j] = v[i, j] - alpha * loss * classLabels[x] * (
-                        #         dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[
-                        #     x, i]) - alpha * r * v[i, j]
-                        v[i, j] = v[i, j] - alpha * adagrad(dw, g_v[i, j]) * (dw + r * v[i, j])
+                        v[i, j] = v[i, j] - alpha * loss * classLabels[x] * (
+                                dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[
+                            x, i]) - alpha * r * v[i, j]
+                        # v[i, j] = v[i, j] - alpha * adagrad(dw, g_v[i, j]) * (dw + r * v[i, j])
 
         # print('g_w_0=', g_w_0)
         # print('g_w=', g_w)
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     dataTest, labelTest = loadTestDataSet(testData)
     date_startTrain = datetime.now()
     print("开始训练")
-    w_0, w, v = stocGradAscent(mat(dataTrain), labelTrain, k=30, iter=20)
+    w_0, w, v = stocGradAscent(mat(dataTrain), labelTrain, k=30, iter=1000)
     print("训练准确性为：%f" % (1 - getAccuracy(mat(dataTrain), labelTrain, w_0, w, v)))
     date_endTrain = datetime.now()
     print("训练时间为：%s" % (date_endTrain - date_startTrain))
