@@ -105,30 +105,18 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
     v = normalvariate(0, 0.2) * ones((n, k))
 
     r = 0.0001
+    e = 1e-8
 
-    t = 0
-    epsilon = 1e-8
-    beta1 = 0.9
-    beta2 = 0.999
+    g_0 = 0
+    gw = zeros((n, 1))
+    gv = zeros((n, k))
+    decay_rate = 0.99
 
-    # w0 weight
-    m0 = 0
-    v0 = 0
-
-    # w
-    m_w = zeros((n, 1))
-    v_w = zeros((n, 1))
-
-    # v
-    m_vw = zeros((n, k))
-    v_vw = zeros((n, k))
-
-    def adam(_m, _v, _e):
-        return _m / (np.sqrt(_v) + _e)
+    def adagrad(_d, _c, _e):
+        return _d / (np.sqrt(_c) + _e)
 
     for it in range(iter):
         print(it)
-        t += 1
         for x in range(m):  # 随机优化，对每一个样本而言的
             inter_1 = dataMatrix[x] * v
             inter_2 = multiply(dataMatrix[x], dataMatrix[x]) * multiply(v, v)  # multiply对应元素相乘
@@ -141,25 +129,16 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
             # print "loss: ",loss
 
             dw = loss * classLabels[x]
-
-            m0 = beta1 * m0 + (1 - beta1) * dw
-            v0 = beta2 * v0 + (1 - beta2) * (dw ** 2)
-            mb = m0 / (1 - beta1 ** t)
-            vb = v0 / (1 - beta2 ** t)
-
-            w_0 = w - alpha * adam(mb, vb, epsilon) - alpha * r * w_0
+            g_0 = decay_rate * g_0 + (1 - decay_rate) * dw ** 2
+            w_0 = w_0 - alpha * adagrad(dw, cache, e) - alpha * r * w_0
 
             # w_0 = w_0 - alpha * loss * classLabels[x] - alpha * r * w_0
 
             for i in range(n):
                 if dataMatrix[x, i] != 0:
                     dw = loss * classLabels[x] * dataMatrix[x, i]
-                    m_w[i] = beta1 * m_w[i] + (1 - beta1) * dw
-                    v_w[i] = beta2 * v_w[i] + (1 - beta2) * (dw ** 2)
-                    mb = m_w[i] / (1 - beta1 ** t)
-                    vb = v_w[i] / (1 - beta2 ** t)
-
-                    w[i, 0] = w[i, 0] - alpha * adam(mb, vb, epsilon) - alpha * r * w[i, 0]
+                    gw[i] = decay_rate * gw[i] + (1 - decay_rate) * dw ** 2
+                    w[i, 0] = w[i, 0] - alpha * adagrad(dw, gw[i], e) - alpha * r * w[i, 0]
 
                     # w[i, 0] = w[i, 0] - alpha * loss * classLabels[x] * dataMatrix[x, i] - alpha * r * w[i, 0]
                     for j in range(k):
@@ -169,13 +148,8 @@ def stocGradAscent(dataMatrix, classLabels, k, iter):
                         dw = loss * classLabels[x] * (
                                 dataMatrix[x, i] * inter_1[0, j] - v[i, j] * dataMatrix[x, i] * dataMatrix[
                             x, i])
-
-                        m_vw[i, j] = beta1 * m_vw[i, j] + (1 - beta1) * dw
-                        v_vw[i, j] = beta2 * v_vw[i, j] + (1 - beta2) * (dw ** 2)
-
-                        mb = m_vw[i, j] / (1 - beta1 ** t)
-                        vb = v_vw[i, j] / (1 - beta2 ** t)
-                        v[i, j] = v[i, j] - alpha * adam(mb, vb, epsilon) - alpha * r * w[i, 0]
+                        gv[i, j] = decay_rate * gv[i, j] + (1 - decay_rate) * dw ** 2
+                        v[i, j] = v[i, j] - alpha * adagrad(dw, gv[i, j], e) - alpha * r * v[i, j]
 
     return w_0, w, v
 
